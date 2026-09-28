@@ -4,11 +4,11 @@ Analytics, Intelligence and Digital Transformation Platform.
 
 ## Products
 
-- AUTVS App
-- AUTVS API
-- AUTVS Landing
-- AUTVS BI
-- AUTVS AI
+- AUTVS App (API monorepo js)
+- AUTVS App (consome API dotnet)
+- AUTVS API (dotnet)
+- AUTVS API AI (javascript)
+- AUTVS Landing Page (js)
 
 ## Technologies
 
