@@ -1,0 +1,14 @@
+# Copie para .github/CODEOWNERS no repositório e troque pelos donos reais (@usuario ou @AUTVS/time).
+# Áreas críticas exigem aprovação do dono.
+
+# Fiscal e certificados
+/src/**/fiscal/**        @AUTVS/DONO-FISCAL
+# Cobrança e planos
+/src/**/cobranca/**      @AUTVS/DONO-COBRANCA
+# Autenticação e sessão
+/src/**/sessao/**        @AUTVS/DONO-SEGURANCA
+# Migrations de banco
+/**/migrations/**        @AUTVS/DONO-BANCO
+# CI e padrão
+/.github/**              @AUTVS/DONO-PLATAFORMA
+/docs/padrao-codigo.md   @AUTVS/DONO-PLATAFORMA
