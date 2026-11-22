@@ -31,12 +31,14 @@ jobs:
   # Substitui o dependency-review-action, que exige GitHub Advanced Security em repositório privado.
   # Só roda onde há package-lock.json; vulnerabilidade alta ou crítica barra o PR.
   auditoria-npm:
-    if: hashFiles('package-lock.json') != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      # hashFiles() só é permitido em passos (não no if do job).
+      - if: hashFiles('package-lock.json') != ''
+        uses: actions/setup-node@v4
         with:
           node-version: "24"
           cache: "npm"
-      - run: npm audit --audit-level=high
+      - if: hashFiles('package-lock.json') != ''
+        run: npm audit --audit-level=high
