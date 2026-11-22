@@ -9,6 +9,7 @@ param(
   [Parameter(Mandatory = $true)][ValidateSet("ts", "dotnet")][string]$Tipo
 )
 $ErrorActionPreference = "Stop"
+$utf8 = New-Object System.Text.UTF8Encoding($false)   # UTF-8 sem BOM; o PS 5.1 lê sem BOM como ANSI, então sempre via .NET
 $raiz = $PSScriptRoot
 if (-not (Test-Path (Join-Path $Repo ".git"))) { throw "Não é um repositório git: $Repo" }
 
@@ -29,16 +30,16 @@ if ($Tipo -eq "ts") {
     $d = Join-Path $Repo $f
     if (-not (Test-Path $d)) { Copy-Item (Join-Path $raiz "dotnet\$f") $d }
   }
-  (Get-Content (Join-Path $Repo ".github\workflows\seguranca.yml") -Raw) -replace 'javascript-typescript', 'csharp' |
-    Set-Content (Join-Path $Repo ".github\workflows\seguranca.yml") -Encoding utf8
+  $w = Join-Path $Repo ".github\workflows\seguranca.yml"
+  [IO.File]::WriteAllText($w, ([IO.File]::ReadAllText($w, $utf8) -replace 'javascript-typescript', 'csharp'), $utf8)
 }
 
 # Garante o bloco no CLAUDE.md (cria ou acrescenta uma única vez).
 $claude = Join-Path $Repo "CLAUDE.md"
-$bloco = Get-Content (Join-Path $raiz "CLAUDE-bloco-padrao.md") -Raw
-if (-not (Test-Path $claude)) { Set-Content $claude $bloco -Encoding utf8 }
-elseif ((Get-Content $claude -Raw) -notmatch [regex]::Escape("@docs/padrao-codigo.md")) {
-  Add-Content $claude ("`n" + $bloco) -Encoding utf8
+$bloco = [IO.File]::ReadAllText((Join-Path $raiz "CLAUDE-bloco-padrao.md"), $utf8)
+if (-not (Test-Path $claude)) { [IO.File]::WriteAllText($claude, $bloco, $utf8) }
+elseif (([IO.File]::ReadAllText($claude, $utf8)) -notmatch [regex]::Escape("@docs/padrao-codigo.md")) {
+  [IO.File]::AppendAllText($claude, ("`n" + $bloco), $utf8)
 }
 Write-Host "Padrão sincronizado em $Repo. Revise 'git diff' e abra o PR."
 Write-Host "Lembrete: CODEOWNERS (ver padroes\github\CODEOWNERS.exemplo) e branch protection são configurados à parte no GitHub."
