@@ -7,9 +7,11 @@ on:
   schedule:
     - cron: "0 9 * * 1"
 
+# actions: read é exigido pelo CodeQL em repositório privado (consulta a execução do workflow).
 permissions:
+  actions: read
   contents: read
-  security-events: write
+  # security-events: write só é necessário com GHAS (envio à aba Security).
 
 jobs:
   codeql:
@@ -24,13 +26,36 @@ jobs:
       - uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
+      # Repositório privado sem GitHub Advanced Security não aceita o envio dos resultados à aba Security.
+      # Por isso a análise roda, o relatório SARIF vira artefato e o PR é barrado se houver achado de nível erro.
+      # Com o GHAS habilitado, troque por `upload: always` e remova os dois passos seguintes.
       - uses: github/codeql-action/analyze@v3
+        with:
+          upload: never
+          output: sarif-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codeql-${{ matrix.language }}
+          path: sarif-results
+      - name: Falhar se houver achado de nível erro
+        run: |
+          # Nível do resultado; se ausente, o padrão da regra (é onde o CodeQL costuma guardar a severidade).
+          total=$(cat sarif-results/*.sarif | jq '[.runs[] | ([(.tool.driver.rules // [])[], (.tool.extensions[]?.rules // [])[]] | map({(.id): (.defaultConfiguration.level // "warning")}) | add // {}) as $niveis | (.results // [])[] | (.level // $niveis[.ruleId] // "warning") | select(. == "error")] | length')
+          echo "Achados de nível erro: $total"
+          test "$total" -eq 0
 
-  revisao-de-dependencias:
-    if: github.event_name == 'pull_request'
+  # Substitui o dependency-review-action, que exige GitHub Advanced Security em repositório privado.
+  # Só roda onde há package-lock.json; vulnerabilidade alta ou crítica barra o PR.
+  auditoria-npm:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/dependency-review-action@v4
+      # hashFiles() só é permitido em passos (não no if do job).
+      - if: hashFiles('package-lock.json') != ''
+        uses: actions/setup-node@v4
         with:
-          fail-on-severity: high
+          node-version: "24"
+          cache: "npm"
+      - if: hashFiles('package-lock.json') != ''
+        run: npm audit --audit-level=high

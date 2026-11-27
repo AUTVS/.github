@@ -5,7 +5,7 @@ em `docs/padrao-codigo.md` (sincronizada por `padroes/sincronizar-padroes.ps1`).
 cópia**: edite aqui e sincronize.
 
 Este documento vale para pessoas e para o Claude. Regras marcadas com **[CI]** são verificadas
-automaticamente e barram o merge; as demais dependem de revisão.
+automaticamente no CI (e barram o merge quando a proteção de branch exige CI verde); as demais dependem de revisão.
 
 ## 1. Fluxo obrigatório de qualquer implementação
 
@@ -18,11 +18,12 @@ automaticamente e barram o merge; as demais dependem de revisão.
 
 Nenhuma etapa é pulada por "ser pequeno". Bug corrigido = teste que reproduz o bug **antes** da correção.
 
-## 2. Estilo e formatação [CI]
+## 2. Estilo e formatação
 
 - Formatação automática: Prettier (TypeScript) e `dotnet format` + `.editorconfig` (C#).
-  Ninguém discute estilo em revisão: a ferramenta decide.
-- TypeScript em modo estrito (`strict: true`); proibido `any` explícito sem comentário justificando.
+  Ninguém discute estilo em revisão: a ferramenta decide. **Estado atual:** as configs estão em `padroes/`,
+  mas a verificação no CI entra em fase própria, para não reformatar o legado de uma vez. Até lá, formate só o que alterar.
+- TypeScript em modo estrito (`strict: true`) [CI via `typecheck`]; `any` explícito só com comentário justificando [CI via ESLint do Next].
 - C#: `nullable` habilitado; warnings novos não entram (ver `Directory.Build.props`).
 - Código legado **não é reformatado em massa**: formate só o que você alterou, para não poluir o diff.
 
@@ -38,7 +39,7 @@ Nenhuma etapa é pulada por "ser pequeno". Bug corrigido = teste que reproduz o 
 ## 4. Estrutura
 
 - Uma responsabilidade por arquivo, função e componente.
-- Complexidade ciclomática de função ≤ 15 [CI via ESLint `complexity`]; função > ~50 linhas pede divisão.
+- Complexidade ciclomática de função ≤ 15 (ESLint `complexity`, hoje **aviso**, não bloqueia: o legado ainda tem funções acima do limite; vira erro depois de zerado); função > ~50 linhas pede divisão.
 - Máximo ~3 níveis de aninhamento; prefira retorno antecipado.
 - Reutilize o que já é compartilhado (ex.: `MenuAcoes`, `ThOrd`, `MenuExportacao`) em vez de criar paralelo.
 - Sem código morto, sem `TODO` sem dono e data.
@@ -50,7 +51,7 @@ Nenhuma etapa é pulada por "ser pequeno". Bug corrigido = teste que reproduz o 
 - **Segredos nunca no código nem no git**: user-secrets / variáveis de ambiente / cofre. `.env` reais fora do repo.
 - **Dados sigilosos** (CPF, certificados, tokens, senhas) nunca em log, mensagem de commit, PR ou issue.
 - Oracle/WinThor: **somente leitura, sempre**. Escrita só no Postgres do AUTVS.
-- Dependência nova: justificar no PR; `npm audit` / Dependabot sem vulnerabilidade alta ou crítica aberta [CI].
+- Dependência nova: justificar no PR; sem vulnerabilidade alta ou crítica aberta [CI via revisão de dependências do `seguranca.yml`].
 
 ## 6. Banco de dados (Postgres)
 
